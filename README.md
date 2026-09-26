@@ -76,27 +76,13 @@ pip install -r requirements.txt
 
 ```bash
 # Terminal 1: Start SITL
-sim_vehicle.py -v Copter --console --map
+sim_vehicle.py -v ArduCopter --console --map
 
 # Terminal 2: Run Drone IDS with SITL
 python run_ids.py
 
 # Terminal 3: Run attack simulations
 python run_simulate.py
-```
-
-## Real Drone Deployment
-
-```bash
-# Connect drone via UART/USB
-# Configure serial port in config/ids_config.yaml:
-sitl:
-  connection_string: "serial:///dev/ttyTHS1:921600"  # Jetson UART
-  # or
-  connection_string: "serial:///dev/ttyUSB0:115200"  # USB
-
-# Run on drone compute module
-python run_ids.py
 ```
 
 ## Configuration
