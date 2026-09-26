@@ -41,7 +41,7 @@ class FirmwareIntegrityDetector(BaseDetector):
         self.reboot_times = [t for t in self.reboot_times if now - t < 3600]
         
         if self.monitor_reboots and len(self.reboot_times) > self.max_reboots:
-            self._alert('excessive_reboots', AlertSeverity.HIGH,
+            self._alert('excessive_reboots', AlertSeverity.WARNING,
                 f"Excessive reboots: {len(self.reboot_times)} in last hour (max: {self.max_reboots})",
                 {'reboot_count': len(self.reboot_times), 'max': self.max_reboots}, 'T1529')
     
@@ -80,7 +80,7 @@ class FirmwareIntegrityDetector(BaseDetector):
             actual_hash = hashlib.sha256(str(param_value).encode()).hexdigest()[:16]
             
             if actual_hash != expected_hash:
-                self._alert('param_integrity_violation', AlertSeverity.HIGH,
+                self._alert('param_integrity_violation', AlertSeverity.WARNING,
                     f"Critical parameter {param_id} integrity check failed",
                     {'param': param_id, 'expected_hash': expected_hash, 'actual_hash': actual_hash}, 'T1562')
     

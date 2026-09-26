@@ -40,7 +40,7 @@ class CommandInjectionDetector(BaseDetector):
         expired = [k for k, v in self.pending_acks.items() if now - v['time'] > self.ack_timeout]
         for k in expired:
             if self.expect_ack:
-                self._alert('command_missing_ack', AlertSeverity.MEDIUM,
+                self._alert('command_missing_ack', AlertSeverity.WARNING,
                     f"Command {k} not acknowledged within {self.ack_timeout}s",
                     {'command': k, 'timeout': self.ack_timeout}, 'T1557')
             del self.pending_acks[k]
@@ -75,13 +75,13 @@ class CommandInjectionDetector(BaseDetector):
         self.command_times.append(current_time)
         recent = [t for t in self.command_times if current_time - t < 1.0]
         if len(recent) > self.max_cmd_rate:
-            self._alert('command_rate_exceeded', AlertSeverity.HIGH,
+            self._alert('command_rate_exceeded', AlertSeverity.WARNING,
                 f"Command rate {len(recent)}/s exceeds limit {self.max_cmd_rate}/s",
                 {'rate': len(recent), 'limit': self.max_cmd_rate}, 'T1499')
         
         recent_5s = [t for t in self.command_times if current_time - t < 5.0]
         if len(recent_5s) > self.burst_threshold:
-            self._alert('command_burst', AlertSeverity.HIGH,
+            self._alert('command_burst', AlertSeverity.WARNING,
                 f"Command burst: {len(recent_5s)} commands in 5s",
                 {'count': len(recent_5s), 'threshold': self.burst_threshold}, 'T1499')
         
@@ -123,7 +123,7 @@ class CommandInjectionDetector(BaseDetector):
             prev_lat, prev_lon = self.mission_items[seq - 1]
             dist = self._haversine(prev_lat, prev_lon, lat, lon) / 1000.0
             if dist > self.max_wp_dist:
-                self._alert('mission_excessive_distance', AlertSeverity.HIGH,
+                self._alert('mission_excessive_distance', AlertSeverity.WARNING,
                     f"Waypoint {seq} distance {dist:.1f}km exceeds limit {self.max_wp_dist}km",
                     {'wp': seq, 'distance_km': dist, 'limit_km': self.max_wp_dist}, 'T1505')
     

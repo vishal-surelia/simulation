@@ -66,17 +66,17 @@ class GPSSpoofingDetector(BaseDetector):
         current_time = time.time()
         
         if sat_count > 0 and sat_count < self.min_satellites and fix_type >= 3:
-            self._alert('gps_insufficient_satellites', AlertSeverity.HIGH,
+            self._alert('gps_insufficient_satellites', AlertSeverity.WARNING,
                 f"GPS 3D fix with only {sat_count} satellites (min: {self.min_satellites})",
                 {'satellites': sat_count, 'fix_type': fix_type, 'lat': lat, 'lon': lon}, 'T1557')
         
         if hdop > self.max_hdop:
-            self._alert('gps_high_hdop', AlertSeverity.MEDIUM,
+            self._alert('gps_high_hdop', AlertSeverity.WARNING,
                 f"GPS HDOP {hdop:.1f} exceeds threshold {self.max_hdop}",
                 {'hdop': hdop, 'threshold': self.max_hdop}, 'T1557')
         
         if vdop > self.max_vdop:
-            self._alert('gps_high_vdop', AlertSeverity.MEDIUM,
+            self._alert('gps_high_vdop', AlertSeverity.WARNING,
                 f"GPS VDOP {vdop:.1f} exceeds threshold {self.max_vdop}",
                 {'vdop': vdop, 'threshold': self.max_vdop}, 'T1557')
         
@@ -114,7 +114,7 @@ class GPSSpoofingDetector(BaseDetector):
             distance = self._haversine_distance(
                 self.last_gps_position['lat'], self.last_gps_position['lon'], lat, lon)
             if distance > self.max_imu_gps_discrepancy:
-                self._alert('gps_imu_discrepancy', AlertSeverity.HIGH,
+                self._alert('gps_imu_discrepancy', AlertSeverity.WARNING,
                     f"GPS-IMU position discrepancy: {distance:.1f}m (threshold: {self.max_imu_gps_discrepancy}m)",
                     {'gps_lat': self.last_gps_position['lat'], 'gps_lon': self.last_gps_position['lon'],
                      'fused_lat': lat, 'fused_lon': lon, 'discrepancy': distance}, 'T1557')
@@ -133,7 +133,7 @@ class GPSSpoofingDetector(BaseDetector):
                 mean_innov = sum(self.ekf_innovations) / len(self.ekf_innovations)
                 std_innov = math.sqrt(sum((x - mean_innov)**2 for x in self.ekf_innovations) / len(self.ekf_innovations))
                 if std_innov > 0 and innov_magnitude > mean_innov + self.innovation_threshold * std_innov:
-                    self._alert('gps_ekf_innovation_spike', AlertSeverity.HIGH,
+                    self._alert('gps_ekf_innovation_spike', AlertSeverity.WARNING,
                         f"EKF innovation spike: {innov_magnitude:.3f} (threshold: {self.innovation_threshold}σ)",
                         {'innovation': innov_magnitude, 'mean': mean_innov, 'std': std_innov}, 'T1557')
     

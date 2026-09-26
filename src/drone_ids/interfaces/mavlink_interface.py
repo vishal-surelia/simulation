@@ -1,9 +1,12 @@
 """
-Drone IDS - MAVLink Interface (Part 1)
+Drone IDS - MAVLink Interface
+Handles MAVLink communication with SITL and attack injection.
 """
 import time
 import logging
 import threading
+import socket
+import json
 from typing import Dict, Any, Optional, Callable
 from dataclasses import dataclass
 
@@ -25,20 +28,24 @@ class ConnectionStatus:
     messages_received: int = 0
     messages_sent: int = 0
     errors: int = 0
-    link_quality: float = 0.0
 
 
 class MAVLinkInterface:
-    def __init__(self, connection_string: str = None):
-        self.connection_string = connection_string or config.get('sitl.connection_string')
+    """MAVLink communication interface with dual-port support (SITL + injection)."""
+    
+    def __init__(self, sitl_connection: str = None, injection_port: int = 14551):
+        self.sitl_connection = sitl_connection or config.get('sitl.connection_string', 'udp:127.0.0.1:14550')
+        self.injection_port = injection_port
         self.source_system = config.get('sitl.source_system', 255)
         self.source_component = config.get('sitl.source_component', 190)
         
         self.master = None
+        self.injection_socket = None
         self.status = ConnectionStatus()
         self._running = False
         self._receive_thread = None
         self._heartbeat_thread = None
+        self._injection_thread = None
         self._message_callback = None
         
         self.logger = logging.getLogger('drone_ids.mavlink')
@@ -46,24 +53,26 @@ class MAVLinkInterface:
     
     def connect(self) -> bool:
         if not MAVLINK_AVAILABLE:
-            self.logger.error("pymavlink not available. Install: pip install pymavlink")
+            self.logger.error("pymavlink not available. Install with: pip install pymavlink")
             return False
         
         try:
-            self.logger.info(f"Connecting to {self.connection_string}...")
+            self.logger.info(f"Connecting to SITL: {self.sitl_connection}")
             self.master = mavutil.mavlink_connection(
-                self.connection_string,
+                self.sitl_connection,
                 source_system=self.source_system,
                 source_component=self.source_component,
                 autoreconnect=True
             )
             
-            self.logger.info("Waiting for heartbeat...")
+            self.logger.info("Waiting for SITL heartbeat...")
             self.master.wait_heartbeat(timeout=config.get('sitl.heartbeat_timeout', 5.0))
             
             self.status.connected = True
             self.status.last_heartbeat = time.time()
-            self.logger.info(f"Connected to system {self.master.target_system}")
+            self.logger.info(f"Connected to SITL system {self.master.target_system}")
+            
+            self._start_injection_listener()
             
             self._running = True
             self._receive_thread = threading.Thread(target=self._receive_loop, daemon=True)
@@ -79,22 +88,73 @@ class MAVLinkInterface:
             self.status.errors += 1
             return False
     
+    def _start_injection_listener(self):
+        try:
+            port = int(self.injection_port)
+            self.injection_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.injection_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.injection_socket.bind(('0.0.0.0', self.injection_port))
+            self.injection_socket.settimeout(1.0)
+            
+            self.logger.info(f"Injection listener started on UDP port {self.injection_port}")
+            
+            self._injection_thread = threading.Thread(target=self._injection_loop, daemon=True)
+            self._injection_thread.start()
+            
+        except Exception as e:
+            self.logger.error(f"Failed to start injection listener: {e}")
+    
+    def _injection_loop(self):
+        self.logger.info("Injection loop started, waiting for packets on port %d", self.injection_port)
+        while self._running and self.injection_socket:
+            try:
+                data, addr = self.injection_socket.recvfrom(65535)
+                self.logger.info("Received %d bytes from %s", len(data), addr)
+                try:
+                    msg_dict = json.loads(data.decode('utf-8'))
+                    msg_dict['src_sys'] = msg_dict.get('src_sys', 1)
+                    msg_dict['src_comp'] = msg_dict.get('src_comp', 1)
+                    msg_dict['seq'] = msg_dict.get('seq', 0)
+                    
+                    self.logger.info("Publishing message type: %s", msg_dict.get('type', 'UNKNOWN'))
+                    message_bus.publish(Message(
+                        type=MessageType.MAVLINK_MESSAGE,
+                        source="injection",
+                        data=msg_dict
+                    ))
+                    self.logger.info("Published message type: %s", msg_dict.get('type', 'UNKNOWN'))
+                except json.JSONDecodeError as e:
+                    self.logger.warning(f"Invalid JSON from {addr}: {e}")
+                except Exception as e:
+                    self.logger.error(f"Injection error: {e}")
+            except socket.timeout:
+                continue
+            except Exception as e:
+                if self._running:
+                    self.logger.error(f"Injection loop error: {e}")
+    
     def disconnect(self) -> None:
         self._running = False
-        if self._receive_thread and self._receive_thread.is_alive():
-            self._receive_thread.join(timeout=2.0)
-        if self._heartbeat_thread and self._heartbeat_thread.is_alive():
-            self._heartbeat_thread.join(timeout=2.0)
+        
+        for thread in [self._receive_thread, self._heartbeat_thread, self._injection_thread]:
+            if thread and thread.is_alive():
+                thread.join(timeout=2.0)
+        
         if self.master:
             self.master.close()
             self.master = None
+        
+        if self.injection_socket:
+            self.injection_socket.close()
+            self.injection_socket = None
+        
         self.status.connected = False
         self.logger.info("Disconnected")
     
     def set_message_callback(self, callback: Callable[[Dict[str, Any]], None]) -> None:
         self._message_callback = callback
     
-    def _receive_loop(self) -> None:
+    def _receive_loop(self):
         while self._running and self.master:
             try:
                 msg = self.master.recv_match(blocking=True, timeout=1.0)
@@ -105,7 +165,7 @@ class MAVLinkInterface:
                 self.status.errors += 1
                 time.sleep(0.1)
     
-    def _process_message(self, msg) -> None:
+    def _process_message(self, msg):
         self.status.messages_received += 1
         self.status.last_heartbeat = time.time()
         
@@ -127,7 +187,7 @@ class MAVLinkInterface:
             except Exception as e:
                 self.logger.error(f"Callback error: {e}")
     
-    def _heartbeat_loop(self) -> None:
+    def _heartbeat_loop(self):
         while self._running and self.master:
             try:
                 self.master.mav.heartbeat_send(
@@ -185,5 +245,5 @@ class MAVLinkInterface:
             'messages_received': self.status.messages_received,
             'messages_sent': self.status.messages_sent,
             'errors': self.status.errors,
-            'connection_string': self.connection_string
+            'injection_port': self.injection_port
         }

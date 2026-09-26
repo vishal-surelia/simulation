@@ -62,7 +62,7 @@ class TelemetryManipulationDetector(BaseDetector):
         yawspeed = msg.get('yawspeed', 0)
         max_rate = max(abs(rollspeed), abs(pitchspeed), abs(yawspeed))
         if max_rate > self.max_attitude_rate:
-            self._alert('impossible_attitude_rate', AlertSeverity.HIGH,
+            self._alert('impossible_attitude_rate', AlertSeverity.WARNING,
                 f"Impossible attitude rate: {math.degrees(max_rate):.1f} deg/s",
                 {'roll_rate': math.degrees(rollspeed), 'pitch_rate': math.degrees(pitchspeed),
                  'yaw_rate': math.degrees(yawspeed), 'max': self.max_attitude_rate}, 'T1557')
@@ -83,7 +83,7 @@ class TelemetryManipulationDetector(BaseDetector):
                 dist = self._haversine(self.last_position[0], self.last_position[1], lat, lon)
                 pos_rate = dist / dt
                 if pos_rate > self.max_pos_rate:
-                    self._alert('impossible_position_rate', AlertSeverity.HIGH,
+                    self._alert('impossible_position_rate', AlertSeverity.WARNING,
                         f"Impossible position rate: {pos_rate:.1f} m/s",
                         {'position_rate': pos_rate, 'max': self.max_pos_rate, 'dt': dt}, 'T1557')
                 if self.last_velocity is not None:
@@ -91,7 +91,7 @@ class TelemetryManipulationDetector(BaseDetector):
                                            (vy - self.last_velocity[1])**2 + 
                                            (vz - self.last_velocity[2])**2) / dt
                     if vel_change > self.max_vel_change:
-                        self._alert('impossible_velocity_change', AlertSeverity.HIGH,
+                        self._alert('impossible_velocity_change', AlertSeverity.WARNING,
                             f"Impossible velocity change: {vel_change:.1f} m/s²",
                             {'vel_change': vel_change, 'max': self.max_vel_change}, 'T1557')
         
@@ -106,7 +106,7 @@ class TelemetryManipulationDetector(BaseDetector):
             if self.gps_alt is not None:
                 diff = abs(self.gps_alt - self.baro_alt)
                 if diff > self.max_alt_diff:
-                    self._alert('baro_gps_altitude_mismatch', AlertSeverity.MEDIUM,
+                    self._alert('baro_gps_altitude_mismatch', AlertSeverity.WARNING,
                         f"Baro-GPS altitude mismatch: {diff:.1f}m",
                         {'gps_alt': self.gps_alt, 'baro_alt': self.baro_alt, 'diff': diff}, 'T1557')
         if self.enable_compass_check:
@@ -114,7 +114,7 @@ class TelemetryManipulationDetector(BaseDetector):
             if self.last_heading is not None:
                 diff = min(abs(heading - self.last_heading), 360 - abs(heading - self.last_heading))
                 if diff > self.max_heading_diff:
-                    self._alert('compass_heading_mismatch', AlertSeverity.MEDIUM,
+                    self._alert('compass_heading_mismatch', AlertSeverity.WARNING,
                         f"Compass-GPS heading mismatch: {diff:.1f} deg",
                         {'heading': heading, 'diff': diff}, 'T1557')
             self.last_heading = heading
@@ -128,13 +128,13 @@ class TelemetryManipulationDetector(BaseDetector):
         if self.last_voltage is not None:
             v_diff = abs(voltage - self.last_voltage)
             if v_diff > self.max_volt_jump:
-                self._alert('voltage_jump', AlertSeverity.MEDIUM,
+                self._alert('voltage_jump', AlertSeverity.WARNING,
                     f"Voltage jump: {v_diff:.2f}V",
                     {'voltage': voltage, 'prev': self.last_voltage, 'diff': v_diff}, 'T1557')
         if self.last_current is not None:
             c_diff = abs(current - self.last_current)
             if c_diff > self.max_curr_jump:
-                self._alert('current_jump', AlertSeverity.MEDIUM,
+                self._alert('current_jump', AlertSeverity.WARNING,
                     f"Current jump: {c_diff:.2f}A",
                     {'current': current, 'prev': self.last_current, 'diff': c_diff}, 'T1557')
         
