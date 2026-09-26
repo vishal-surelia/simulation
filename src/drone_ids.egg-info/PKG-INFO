@@ -1,0 +1,87 @@
+Metadata-Version: 2.4
+Name: drone-ids
+Version: 1.0.0
+Summary: Drone Intrusion Detection System for PUSHPAK Grand Challenge 2026
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: pymavlink>=2.4.0
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: numpy>=1.21.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.21.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0.0; extra == "dev"
+Requires-Dist: black>=23.0.0; extra == "dev"
+Requires-Dist: flake8>=6.0.0; extra == "dev"
+Requires-Dist: mypy>=1.0.0; extra == "dev"
+
+# Drone Intrusion Detection System (Drone IDS)
+## PUSHPAK Grand Challenge 2026 - Objective 2
+
+An indigenous, real-time cyber threat detection system for UAV platforms designed for the PUSHPAK Grand Challenge 2026 "Security of Drones" competition.
+
+## Overview
+
+This Drone IDS provides comprehensive intrusion detection for UAV platforms:
+
+- **GPS Spoofing Detection** - Position jumps, velocity anomalies, IMU cross-check, EKF innovation
+- **MAVLink Communication Anomalies** - Rate analysis, sequence gaps, payload anomalies, heartbeat monitoring
+- **Command Injection Detection** - Unauthorized sources, rate limiting, critical parameter tampering, mission injection
+- **Telemetry Manipulation** - Impossible attitude rates, position/velocity inconsistency, sensor cross-validation
+- **DoS Detection** - Link quality, message flooding, heartbeat loss, RF jamming detection
+- **Firmware Integrity** - Boot verification, parameter integrity, reboot monitoring, memory corruption detection
+
+## Installation
+
+```bash
+cd drone_ids
+pip install -r requirements.txt
+
+# For SITL: install ArduPilot and set ARDUPILOT_SITL env var
+```
+
+## Quick Start
+
+```bash
+# Terminal 1: Start SITL
+sim_vehicle.py -v copter -f quad -I0 --console --map
+
+# Terminal 2: Run Drone IDS with SITL
+python scripts/run_ids.py --sitl --duration 120
+
+# Run attack simulations
+python scripts/simulate_attacks.py --attack all
+```
+
+## Configuration
+
+Edit `config/ids_config.yaml` for:
+- SITL connection parameters
+- Detection thresholds
+- Alerting outputs
+- Forensics settings
+
+## Output
+
+- Console: Real-time colored alerts
+- Logs: `logs/alerts.log`, `logs/evidence.log`
+- Chain of Custody: `logs/chain_of_custody.log`
+
+## Detectors
+
+| Detector | Attack Types |
+|----------|--------------|
+| GPS Spoofing | Position jump, velocity, IMU cross-check |
+| MAVLink Anomaly | Rate, sequence, payload anomalies |
+| Command Injection | Unauthorized source, rate limit, ACK |
+| Telemetry Manipulation | Kinematic, sensor cross-check |
+| DoS | Flooding, jamming, heartbeat loss |
+| Firmware Integrity | Boot hash, param integrity, reboots |
+
+## Competition Compliance
+
+Addresses all evaluation criteria (Detection Accuracy 20%, FPR 20%, Distance 10%, Latency 10%, Coverage 15%, Efficiency 10%, Integration 5%, Documentation 5%, Future 5%).
+
+## License
+
+MIT License

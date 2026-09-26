@@ -1,0 +1,3 @@
+[console_scripts]
+drone-ids = drone_ids.scripts.run_ids:main
+drone-ids-simulate = drone_ids.scripts.simulate_attacks:main
