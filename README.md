@@ -76,7 +76,7 @@ pip install -r requirements.txt
 
 ```bash
 # Terminal 1: Start SITL
-sim_vehicle.py -v copter -f quad -I0 --console --map
+sim_vehicle.py -v Copter --console --map
 
 # Terminal 2: Run Drone IDS with SITL
 python run_ids.py
