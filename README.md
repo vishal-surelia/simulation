@@ -86,20 +86,6 @@ python run_ids.py
 # Terminal 3: Inject attacks (run after IDS says "Running indefinitely...")
 python run_attack.py
 ```
-
-## Real Drone Deployment
-
-```bash
-# Configure serial port in config/ids_config.yaml:
-sitl:
-  connection_string: "serial:///dev/ttyTHS1:921600"  # Jetson UART
-  # or
-  connection_string: "serial:///dev/ttyUSB0:115200"  # USB
-
-# Run on drone compute module
-python run_ids.py
-```
-
 ## Installation
 
 ```bash
