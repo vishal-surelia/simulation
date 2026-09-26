@@ -128,51 +128,7 @@ Edit `config/ids_config.yaml` for:
 
 Addresses all evaluation criteria (Detection Accuracy 20%, FPR 20%, Distance 10%, Latency 10%, Coverage 15%, Efficiency 10%, Integration 5%, Documentation 5%, Future 5%).
 
-## License
 
-MIT License
-
-## Quick Start
-
-```bash
-# Terminal 1: Start SITL
-sim_vehicle.py -v copter -f quad -I0 --console --map
-
-# Terminal 2: Run Drone IDS with SITL
-python scripts/run_ids.py --sitl --duration 120
-
-# Run attack simulations
-python scripts/simulate_attacks.py --attack all
-```
-
-## Configuration
-
-Edit `config/ids_config.yaml` for:
-- SITL connection parameters
-- Detection thresholds
-- Alerting outputs
-- Forensics settings
-
-## Output
-
-- Console: Real-time colored alerts
-- Logs: `logs/alerts.log`, `logs/evidence.log`
-- Chain of Custody: `logs/chain_of_custody.log`
-
-## Detectors
-
-| Detector | Attack Types |
-|----------|--------------|
-| GPS Spoofing | Position jump, velocity, IMU cross-check |
-| MAVLink Anomaly | Rate, sequence, payload anomalies |
-| Command Injection | Unauthorized source, rate limit, ACK |
-| Telemetry Manipulation | Kinematic, sensor cross-check |
-| DoS | Flooding, jamming, heartbeat loss |
-| Firmware Integrity | Boot hash, param integrity, reboots |
-
-## Competition Compliance
-
-Addresses all evaluation criteria (Detection Accuracy 20%, FPR 20%, Distance 10%, Latency 10%, Coverage 15%, Efficiency 10%, Integration 5%, Documentation 5%, Future 5%).
 
 ## License
 
