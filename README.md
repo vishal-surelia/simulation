@@ -129,7 +129,3 @@ Edit `config/ids_config.yaml` for:
 Addresses all evaluation criteria (Detection Accuracy 20%, FPR 20%, Distance 10%, Latency 10%, Coverage 15%, Efficiency 10%, Integration 5%, Documentation 5%, Future 5%).
 
 
-
-## License
-
-MIT License
